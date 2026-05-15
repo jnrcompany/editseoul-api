@@ -17,11 +17,12 @@ export default async function handler(req, res) {
 
   try {
     // Step 1: OAuth 토큰 획득
-    const mallId = process.env.CAFE24_MALL_ID || 'editseoul';
+    const mallId = process.env.CAFE24_MALL_ID || 'lusisbeauty1004';
+    const shopNo = process.env.CAFE24_SHOP_NO || '6';
     const clientId = process.env.CAFE24_CLIENT_ID;
     const clientSecret = process.env.CAFE24_CLIENT_SECRET;
 
-    console.log(`[디버그] OAuth 토큰 요청 - Mall: ${mallId}, ClientID: ${clientId?.substring(0, 8)}...`);
+    console.log(`[디버그] OAuth 토큰 요청 - Mall: ${mallId}, Shop: ${shopNo}, ClientID: ${clientId?.substring(0, 8)}...`);
 
     const tokenUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
     const authHeader = 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -51,8 +52,8 @@ export default async function handler(req, res) {
     const accessToken = tokenData.access_token;
     console.log(`[디버그] 토큰 획득됨: ${accessToken?.substring(0, 20)}...`);
 
-    // Step 2: 상품 조회
-    const productUrl = `https://${mallId}.cafe24api.com/api/v2/products?brand_code=${encodeURIComponent(brand_code)}&limit=${limit}`;
+    // Step 2: 상품 조회 (멀티쇼핑몰용 shop_no 파라미터 추가)
+    const productUrl = `https://${mallId}.cafe24api.com/api/v2/products?brand_code=${encodeURIComponent(brand_code)}&shop_no=${shopNo}&limit=${limit}`;
     
     console.log(`[디버그] 상품 요청 URL: ${productUrl}`);
 
