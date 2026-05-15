@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     }
 
     // Step 1: Cafe24 OAuth 토큰 발급
-    const tokenUrl = `https://${mallId}.cafe24api.com/oauth/token`;
+    const tokenUrl = 'https://editseoul.cafe24api.com/oauth/token';
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
     const tokenResponse = await fetch(tokenUrl, {
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     }
 
     // Step 2: 상품 목록 조회
-    const productsUrl = `https://${mallId}.cafe24api.com/api/v2/products`
+    const productsUrl = 'https://editseoul.cafe24api.com/api/v2/products'
       + `?brand_code=${encodeURIComponent(brandCode)}`
       + `&limit=${limit}`;
 
