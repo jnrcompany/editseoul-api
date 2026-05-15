@@ -1,97 +1,87 @@
-/**
- * Vercel 서버리스 함수 - Cafe24 상품 API 프록시
- */
-
+// /api/products.js
 export default async function handler(req, res) {
+  const { brand_code, limit = 100 } = req.query;
+
   // CORS 헤더 설정
   res.setHeader('Access-Control-Allow-Origin', 'https://editseoul.co.kr');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (!brand_code) {
+    return res.status(400).json({ error: 'brand_code 필수' });
   }
 
   try {
-    const brandCode = req.query.brand_code || '';
-    const limit = req.query.limit || 100;
-
-    if (!brandCode) {
-      return res.status(400).json({ error: 'brand_code query parameter required' });
-    }
-
+    // Step 1: OAuth 토큰 획득
+    const mallId = process.env.CAFE24_MALL_ID || 'editseoul';
     const clientId = process.env.CAFE24_CLIENT_ID;
     const clientSecret = process.env.CAFE24_CLIENT_SECRET;
-    const mallId = process.env.CAFE24_MALL_ID || 'editseoul';
 
-    if (!clientId || !clientSecret) {
-      console.error('[Vercel API] 환경변수 누락');
-      return res.status(500).json({ error: 'Server configuration error' });
-    }
+    console.log(`[디버그] OAuth 토큰 요청 - Mall: ${mallId}, ClientID: ${clientId?.substring(0, 8)}...`);
 
-    // Step 1: Cafe24 OAuth 토큰 발급
-    const tokenUrl = 'https://editseoul.cafe24api.com/oauth/token';
-    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const tokenUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
+    const authHeader = 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    console.log(`[디버그] 토큰 URL: ${tokenUrl}`);
 
     const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: 'grant_type=client_credentials&scope=mall.read_product',
+      body: 'grant_type=client_credentials&scope=mall.read_product'
     });
 
+    console.log(`[디버그] 토큰 응답 상태: ${tokenResponse.status}`);
+    const tokenData = await tokenResponse.json();
+
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('[Vercel API] 토큰 발급 실패:', tokenResponse.status);
+      console.error(`[오류] 토큰 요청 실패:`, tokenData);
       return res.status(tokenResponse.status).json({ 
-        error: 'Failed to obtain token from Cafe24'
+        error: 'OAuth 토큰 획득 실패',
+        details: tokenData 
       });
     }
 
-    const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
+    console.log(`[디버그] 토큰 획득됨: ${accessToken?.substring(0, 20)}...`);
 
-    if (!accessToken) {
-      return res.status(500).json({ error: 'No access token in response' });
-    }
+    // Step 2: 상품 조회
+    const productUrl = `https://${mallId}.cafe24api.com/api/v2/products?brand_code=${encodeURIComponent(brand_code)}&limit=${limit}`;
+    
+    console.log(`[디버그] 상품 요청 URL: ${productUrl}`);
 
-    // Step 2: 상품 목록 조회
-    const productsUrl = 'https://editseoul.cafe24api.com/api/v2/products'
-      + `?brand_code=${encodeURIComponent(brandCode)}`
-      + `&limit=${limit}`;
-
-    const productsResponse = await fetch(productsUrl, {
+    const productResponse = await fetch(productUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
 
-    if (!productsResponse.ok) {
-      const errorText = await productsResponse.text();
-      console.error('[Vercel API] 상품 조회 실패:', productsResponse.status);
-      return res.status(productsResponse.status).json({ 
-        error: 'Failed to fetch products from Cafe24'
+    console.log(`[디버그] 상품 응답 상태: ${productResponse.status}`);
+    const productData = await productResponse.json();
+
+    if (!productResponse.ok) {
+      console.error(`[오류] 상품 요청 실패:`, productData);
+      return res.status(productResponse.status).json({ 
+        error: '상품 조회 실패',
+        details: productData 
       });
     }
 
-    const productsData = await productsResponse.json();
-
-    // Step 3: 응답 반환
-    return res.status(200).json(productsData);
+    return res.status(200).json(productData);
 
   } catch (error) {
-    console.error('[Vercel API] 에러:', error);
+    console.error('[심각한 오류]', error.message, error.stack);
     return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
+      error: '서버 오류',
+      message: error.message
     });
   }
 }
