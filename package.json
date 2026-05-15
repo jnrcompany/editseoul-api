@@ -1,0 +1,14 @@
+{
+  "name": "editseoul-api",
+  "version": "1.0.0",
+  "description": "Cafe24 API Proxy for EditSeoul Brand Products",
+  "main": "api/products.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "author": "",
+  "license": "MIT"
+}
