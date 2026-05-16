@@ -22,6 +22,11 @@ module.exports = async function handler(req, res) {
   try {
     const token = await getValidToken();
 
+    // ★ 디버그 로그 (확인 후 삭제 가능)
+    console.log('[DEBUG] MALL_ID:', MALL_ID);
+    console.log('[DEBUG] CLIENT_ID:', process.env.CAFE24_CLIENT_ID);
+    console.log('[DEBUG] TOKEN 앞 10자:', token ? token.slice(0, 10) : 'NONE');
+
     const url =
       `https://${MALL_ID}.cafe24api.com/api/v2/products` +
       `?brand_code=${encodeURIComponent(brand_code)}` +
@@ -30,16 +35,17 @@ module.exports = async function handler(req, res) {
       `&selling=T`;
 
     const resp = await fetch(url, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    'X-Cafe24-Client-Id': process.env.CAFE24_CLIENT_ID,
-    'Content-Type': 'application/json',
-    'X-Cafe24-Api-Version': '2024-06-01',
-  },
-});
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Cafe24-Client-Id': process.env.CAFE24_CLIENT_ID,
+        'Content-Type': 'application/json',
+        'X-Cafe24-Api-Version': '2024-06-01',
+      },
+    });
 
     if (!resp.ok) {
       const body = await resp.text();
+      console.log('[DEBUG] Cafe24 응답 오류:', resp.status, body);
       return res.status(resp.status).json({ error: body });
     }
 
