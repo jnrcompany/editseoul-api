@@ -1,58 +1,42 @@
-// 브랜드별 상품 조회 API
-// GET /api/products?brand_code=B000000F&limit=100
-
-const { getValidToken, MALL_ID } = require('./_token');
-
 module.exports = async function handler(req, res) {
-  // CORS 헤더
   res.setHeader('Access-Control-Allow-Origin', 'https://editseoul.co.kr');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // CORS preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { brand_code, limit = 100 } = req.query;
+  const MALL_ID = process.env.CAFE24_MALL_ID || 'lusisbeauty1004';
+
   if (!brand_code) {
-    return res.status(400).json({ error: 'brand_code 파라미터가 필요합니다.' });
+    return res.status(400).json({ error: 'brand_code required' });
   }
 
   try {
-    const token = await getValidToken();
-
-    // ★ 디버그 로그 (확인 후 삭제 가능)
-    console.log('[DEBUG] MALL_ID:', MALL_ID);
-    console.log('[DEBUG] CLIENT_ID:', process.env.CAFE24_CLIENT_ID);
-    console.log('[DEBUG] TOKEN 앞 10자:', token ? token.slice(0, 10) : 'NONE');
-
-    const url =
-      `https://${MALL_ID}.cafe24api.com/api/v2/products` +
-      `?brand_code=${encodeURIComponent(brand_code)}` +
-      `&limit=${limit}` ;
-
+    // 카페24 스토어프론트 내부 상품 목록 엔드포인트 (OAuth 불필요)
+    const url = `https://${MALL_ID}.cafe24.com/exec/front/Product/productList`
+      + `?brand_code=${encodeURIComponent(brand_code)}`
+      + `&limit=${limit}`
+      + `&json=1`;
 
     const resp = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        'X-Cafe24-Client-Id': process.env.CAFE24_CLIENT_ID,
-        'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2022-09-01',
-      },
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json, text/plain, */*',
+      }
     });
 
-    if (!resp.ok) {
-      const body = await resp.text();
-      console.log('[DEBUG] Cafe24 응답 오류:', resp.status, body);
-      return res.status(resp.status).json({ error: body });
+    const text = await resp.text();
+    console.log('[PROXY] status:', resp.status, '| body preview:', text.slice(0, 300));
+
+    // JSON 파싱 시도
+    try {
+      const data = JSON.parse(text);
+      return res.json(data);
+    } catch (e) {
+      // JSON이 아니면 원본 텍스트와 상태 반환 (디버그용)
+      return res.json({ status: resp.status, raw: text.slice(0, 500) });
     }
-
-    const data = await resp.json();
-    return res.status(200).json({ products: data.products || [] });
-
   } catch (err) {
-    console.error('[products] 오류:', err.message);
     return res.status(500).json({ error: err.message });
   }
 };
