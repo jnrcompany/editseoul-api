@@ -32,14 +32,15 @@ module.exports = async function handler(req, res) {
       `?brand_code=${encodeURIComponent(brand_code)}` +
       `&limit=${limit}` +
       `&display=T` +
-      `&selling=T`;
+      `&selling=T` +
+      &shop_no=6`; 
 
     const resp = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         'X-Cafe24-Client-Id': process.env.CAFE24_CLIENT_ID,
         'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2024-06-01',
+        'X-Cafe24-Api-Version': '2022-09-01',
       },
     });
 
