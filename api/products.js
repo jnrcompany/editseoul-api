@@ -4,6 +4,11 @@
 const { getValidToken, MALL_ID } = require('./_token');
 
 module.exports = async function handler(req, res) {
+  // CORS 헤더
+  res.setHeader('Access-Control-Allow-Origin', 'https://editseoul.co.kr');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
