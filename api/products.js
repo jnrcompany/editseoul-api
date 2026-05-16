@@ -33,7 +33,8 @@ module.exports = async function handler(req, res) {
       `&limit=${limit}` +
       `&display=T` +
       `&selling=T` +
-      &shop_no=6`; 
+      `&shop_no=6`; 
+
 
     const resp = await fetch(url, {
       headers: {
