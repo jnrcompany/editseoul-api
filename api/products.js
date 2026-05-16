@@ -30,10 +30,7 @@ module.exports = async function handler(req, res) {
     const url =
       `https://${MALL_ID}.cafe24api.com/api/v2/products` +
       `?brand_code=${encodeURIComponent(brand_code)}` +
-      `&limit=${limit}` +
-      `&display=T` +
-      `&selling=T` +
-      `&shop_no=6`; 
+      `&limit=${limit}` ;
 
 
     const resp = await fetch(url, {
