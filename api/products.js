@@ -30,12 +30,13 @@ module.exports = async function handler(req, res) {
       `&selling=T`;
 
     const resp = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2024-06-01',
-      },
-    });
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'X-Cafe24-Client-Id': process.env.CAFE24_CLIENT_ID,
+    'Content-Type': 'application/json',
+    'X-Cafe24-Api-Version': '2024-06-01',
+  },
+});
 
     if (!resp.ok) {
       const body = await resp.text();
